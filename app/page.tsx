@@ -1,69 +1,129 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export default function StudentChat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const documentContent = `septimo-basico-historia-geografia-y-ciencias-sociales-texto-del-estudiante.pdf`;
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const userMessage: Message = { role: 'user', content: input };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages, documentContent }),
+      });
+
+      const body = await res.text();
+      let data: unknown;
+      try {
+        data = JSON.parse(body);
+      } catch {
+        throw new Error(`El servidor devolvió una respuesta no válida (HTTP ${res.status}).`);
+      }
+
+      if (typeof data !== 'object' || data === null) {
+        throw new Error('El servidor devolvió una respuesta no válida.');
+      }
+
+      const error = 'error' in data && typeof data.error === 'string' ? data.error : undefined;
+      if (!res.ok) {
+        throw new Error(error ?? `Error del servidor (HTTP ${res.status}).`);
+      }
+
+      const content = 'content' in data && typeof data.content === 'string' ? data.content : undefined;
+      if (!content) {
+        throw new Error(error ?? 'El servidor no devolvió una respuesta. Intenta de nuevo.');
+      }
+      setMessages([...newMessages, { role: 'assistant', content }]);
+    } catch (err) {
+      console.error(err);
+      setMessages([
+        ...newMessages,
+        {
+          role: 'assistant',
+          content: err instanceof Error ? err.message : 'No pude conectar con el servidor. Intenta de nuevo.',
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="flex flex-col h-screen max-w-3xl mx-auto p-4 font-sans">
+      <header className="border-b pb-3 mb-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-slate-800">
+          🤖 SocrátIA &amp; 🐶 Lupo
+          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">
+            Tutor Guiado
+          </span>
+        </h1>
+      </header>
+
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+        {messages.length === 0 && (
+          <div className="text-center text-slate-500 my-10 p-6 bg-slate-50 rounded-lg border border-dashed">
+            <p className="font-semibold text-slate-700">¡Hola! Para comenzar tu sesión:</p>
+            <p className="text-sm mt-1">
+              Ingresa la consigna de tu tarea junto con tu <strong>borrador o hipótesis inicial</strong>.
+            </p>
+          </div>
+        )}
+
+        {messages.map((m, idx) => (
+          <div
+            key={idx}
+            className={`p-4 rounded-xl max-w-[85%] whitespace-pre-wrap ${
+              m.role === 'user'
+                ? 'bg-blue-600 text-white ml-auto'
+                : 'bg-slate-100 text-slate-800 border border-slate-200'
+            }`}
+          >
+            {m.content}
+          </div>
+        ))}
+
+        {loading && (
+          <div className="bg-slate-100 text-slate-500 p-3 rounded-xl max-w-[80%] animate-pulse">
+            SocrátIA está evaluando tu avance...
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={sendMessage} className="mt-4 flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Escribe tu hipótesis o duda..."
+          className="flex-1 border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+        >
+          Enviar
+        </button>
+      </form>
     </div>
   );
 }
