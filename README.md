@@ -16,6 +16,10 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Fuentes de información
+
+Agrega archivos `.pdf` o `.txt` a la carpeta `fuentes/`. El tutor los leerá automáticamente y seleccionará fragmentos relacionados con cada consulta; para los PDF, también indicará el número de página cuando esté disponible. Los PDF escaneados necesitan OCR para que su texto pueda ser consultado.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

@@ -12,8 +12,6 @@ export default function StudentChat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const documentContent = `septimo-basico-historia-geografia-y-ciencias-sociales-texto-del-estudiante.pdf`;
-
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
@@ -28,7 +26,7 @@ export default function StudentChat() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, documentContent }),
+        body: JSON.stringify({ messages: newMessages }),
       });
 
       const body = await res.text();
@@ -77,6 +75,10 @@ export default function StudentChat() {
           </span>
         </h1>
       </header>
+
+      <p className="mb-3 text-sm text-slate-600">
+        Fuentes activas: agrega archivos PDF o TXT a la carpeta <strong>fuentes/</strong>.
+      </p>
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {messages.length === 0 && (
